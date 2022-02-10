@@ -1,0 +1,7 @@
+youtube_dl
+requests
+moviepy
+pillow
+pyttsx3
+pydrive
+pypiwin32
