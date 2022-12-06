@@ -87,3 +87,12 @@ class Scraper:
 		print("Got comments from post.")
 
 		return comments
+
+	def get_images_urls_from_subreddit(self, page):
+		urls = []
+		for post in page["data"]["children"]:
+			if "url_overridden_by_dest" in post["data"]:
+				if post["data"]["url_overridden_by_dest"].endswith(".png") or post["data"]["url_overridden_by_dest"].endswith(".jpg"):
+					urls.append(post["data"]["url_overridden_by_dest"])
+
+		return urls

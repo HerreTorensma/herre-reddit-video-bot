@@ -1,6 +1,7 @@
 import os
 import moviepy.editor as mpy
 import re
+from PIL import Image
 
 class VideoCompiler:
 	def __init__(self, width, height):
@@ -64,3 +65,50 @@ class VideoCompiler:
 		final.close()
 
 		print("Rendered video.")
+
+	def resize_images(self, input_directory, output_directory):
+		image_paths = os.listdir(input_directory)
+		for path in image_paths:
+			image = Image.open(f"{input_directory}/{path}")
+			x, y = image.size
+
+			new_x = 0
+			new_y = 0
+
+			x_multiplier = self.width / x
+			y_multiplier = self.height / y
+
+			if y_multiplier < x_multiplier:
+				new_x = int(x * y_multiplier)
+				new_y = int(y * y_multiplier)
+			else:
+				new_x = int(x * x_multiplier)
+				new_y = int(y * x_multiplier)
+
+			resized = image.resize((new_x, new_y))
+
+			image_with_edges = Image.new("RGB", (self.width, self.height), (0, 0, 0))
+
+			x_position = int(self.width / 2 - new_x / 2)
+			y_position = int(self.height / 2 - new_y / 2)
+
+			image_with_edges.paste(resized, (x_position, y_position))
+			image_with_edges.save(f"{output_directory}/{os.path.splitext(path)[0]}.png", "PNG")
+
+	def compile_image_compilation(self, time_per_image, music_path):
+		images = []
+		
+		image_paths = os.listdir("./temp_files/resized_footage")
+		image_paths.sort(key=lambda f: int(re.sub('\D', '', f)))
+		for i in range(len(image_paths)):
+			images.append(mpy.ImageClip(f"./temp_files/resized_footage/{i}.png", duration=time_per_image))
+
+		final = mpy.concatenate_videoclips(images)
+
+		music_clip = mpy.AudioFileClip(music_path)
+		music_clip = music_clip.set_duration(final.duration)
+
+		final = final.set_audio(music_clip)
+		
+		final.write_videofile("./temp_files/final/final.mp4", fps=24)
+		final.close()

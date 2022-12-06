@@ -1,5 +1,5 @@
 from backend.scraper import Scraper
-from backend.video_downloader import VideoDownloader
+from backend.content_downloader import ContentDownloader
 from backend.video_compiler import VideoCompiler
 from backend.thumbnail_maker import ThumbnailMaker
 from backend.text_to_speech import TextToSpeech
@@ -56,7 +56,7 @@ class VideoMaker:
 				page = scraper.get_post_json(link + ".json")
 				urls.append(scraper.get_video_url_from_post(page))
 
-		video_downloader = VideoDownloader("./temp_files/footage", urls)
+		video_downloader = ContentDownloader("./temp_files/footage", urls)
 		video_downloader.download_videos()
 
 		video_compiler = VideoCompiler(width, height)
@@ -241,3 +241,39 @@ class VideoMaker:
 		urls = scraper.get_post_urls_from_subreddit(page)
 		for url in urls:
 			self.make_post_video(url + ".json", drive)
+
+	def make_image_compilation(self, width, height, subreddit, listing, amount, timeframe, drive, music_path, time_per_image):
+		scraper = Scraper()
+		page = scraper.get_subreddit_json(subreddit, listing, amount, timeframe)
+		urls = scraper.get_images_urls_from_subreddit(page)
+		
+		content_downloader = ContentDownloader("./temp_files/images", urls)
+		content_downloader.download_images()
+
+		video_compiler = VideoCompiler(width, height)
+		video_compiler.resize_images("./temp_files/images", "./temp_files/resized_footage")
+		
+		video_compiler.compile_image_compilation(time_per_image, music_path)
+
+		config_manager = ConfigManager("./config.ini")
+		config = config_manager.read_config()
+
+		file_uploader = FileUploader()
+		if drive == True:
+			file_uploader.upload_to_google_drive("./temp_files/final/final.mp4", "compilation", config["google_drive"]["video_folder_id"])
+			if os.path.isfile("./temp_files/final/thumbnail.png"):
+				file_uploader.upload_to_google_drive("./temp_files/final/thumbnail.png", "compilation", config["google_drive"]["thumbnail_folder_id"])
+		else:
+			video_folder = config["general"]["video_save_location"]
+			if video_folder == "default":
+				video_folder = os.path.expanduser("~/Videos/Herre's Reddit Video Bot/videos")
+			
+			thumbnail_folder = config["general"]["thumbnail_save_location"]
+			if thumbnail_folder == "default":
+				thumbnail_folder = os.path.expanduser("~/Videos/Herre's Reddit Video Bot/thumbnails")
+			
+			file_uploader.copy_to_folder("./temp_files/final/final.mp4", video_folder, "", ".mp4")
+			if os.path.isfile("./temp_files/final/thumbnail.png"):
+				file_uploader.copy_to_folder("./temp_files/final/thumbnail.png", thumbnail_folder, "", ".png")
+
+		self.delete_files()

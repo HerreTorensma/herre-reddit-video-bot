@@ -16,6 +16,8 @@ from frontend.comments import Comments
 from frontend.multiple_posts import MultiplePosts
 from frontend.multiple_comments import MultipleComments
 
+from frontend.automatic_image_compilation import AutomaticImageCompilation
+
 from frontend.text_redirector import TextRedirector
 
 from backend.video_maker import VideoMaker
@@ -23,7 +25,7 @@ from backend.video_maker import VideoMaker
 class GUI:
 	def __init__(self, master):
 		master.title("Herre's Reddit Video Bot")
-		master.geometry("1024x768")
+		master.geometry("1280x720")
 
 		self.output_box_frame = ttk.LabelFrame(text="Output", padding=[10, 10])
 		self.output_box = tk.Text(self.output_box_frame, height=8)
@@ -44,6 +46,7 @@ class GUI:
 		multiple_posts_tab = MultiplePosts(video_maker)
 		multiple_comments_tab = MultipleComments(video_maker)
 		settings_tab = Settings()
+		automic_image_compilation_tab = AutomaticImageCompilation(video_maker)
 
 		self.notebook.add(manual_compilation_tab, text="Manual Compilation")
 		self.notebook.add(automatic_compilation_tab, text="Automatic Compilation")
@@ -51,6 +54,7 @@ class GUI:
 		self.notebook.add(comments_tab, text="Comments")
 		self.notebook.add(multiple_posts_tab, text="Automatic Posts")
 		self.notebook.add(multiple_comments_tab, text="Automatic Comments")
+		self.notebook.add(automic_image_compilation_tab, text="Automatic Image Compilation")
 		self.notebook.add(settings_tab, text="Settings")
 
 		self.notebook.pack(expand=1, fill="both")
