@@ -58,3 +58,18 @@ class ImageMaker:
 		image.close()
 
 		print("Content image made.")
+
+	def make_transparant_content_image(self, content, lines, filename):
+		image = Image.new("RGBA", (1080, 1920), (0, 0, 0, 0))
+
+		draw = ImageDraw.Draw(image)
+		notosans = ImageFont.truetype("./fonts/NotoSans-Regular.ttf", 40)
+
+		height = 53
+		y = 0
+		for line in lines:
+			draw.text((32, 128 + y), line, font=notosans)
+			y += height
+
+		image.save(filename, "PNG")
+		image.close()

@@ -277,3 +277,67 @@ class VideoMaker:
 				file_uploader.copy_to_folder("./temp_files/final/thumbnail.png", thumbnail_folder, "", ".png")
 
 		self.delete_files()
+
+	def make_transparant_post_video(self, url, drive):
+		url = url + ".json"
+
+		scraper = Scraper()
+		page = scraper.get_post_json(url)
+		post_data = scraper.get_post_data(page)
+		
+		text_formatter = TextFormatter()
+		content_lines, formatted_content = text_formatter.format_content([post_data], 50, 32)
+
+		for i in range(len(formatted_content)):
+			formatted_content[i]["body"] = text_formatter.convert_html_to_unicode(formatted_content[i]["body"])
+
+		sentences = []
+		for content in formatted_content:
+			sentences.append(text_formatter.split_into_sentences(content["body"]))
+
+		sentences = text_formatter.filter_sentences(sentences)
+
+		text_to_speech = TextToSpeech()
+		text_to_speech.save_audio(post_data["title"], "./temp_files/title_clips/title.mp3")
+		
+		audio_counter = 0
+		for i in range(len(sentences)):
+			for j in range(len(sentences[i])):
+				text_to_speech.save_audio(sentences[i][j], f"./temp_files/audio_clips/{audio_counter}.mp3")
+
+				audio_counter += 1
+		
+		text_to_speech.stop_engine()
+		
+		image_maker = ImageMaker()
+		image_maker.make_title_image(post_data, "./temp_files/title_clips/title.png")
+
+		image_counter = 0
+		for i in range(len(sentences)):
+			frame_text = ""
+			for j in range(len(sentences[i])):
+				frame_text += sentences[i][j] + " "
+				lines = text_formatter.split_into_paragraphs(frame_text, 50)
+
+				while lines[0] == "\n":
+					lines.remove("\n")
+
+				image_maker.make_transparant_content_image(formatted_content[i], lines, f"./temp_files/images/{image_counter}.png")
+				image_counter += 1
+
+		video_compiler = VideoCompiler(1080, 1920)
+		video_compiler.compile_reddit_video()
+
+		config_manager = ConfigManager("./config.ini")
+		config = config_manager.read_config()
+
+		file_uploader = FileUploader()
+		if drive == True:
+			file_uploader.upload_to_google_drive("./temp_files/final/final.mp4", post_data["title"], config["google_drive"]["video_folder_id"])
+		else:
+			folder = config["general"]["video_save_location"]
+			if folder == "default":
+				folder = os.path.expanduser("~/Videos/Herre's Reddit Video Bot/videos")
+			file_uploader.copy_to_folder("./temp_files/final/final.mp4", folder, re.sub(r'[\\/*?:"<>|]', "", post_data["title"] + ".mp4"), None)
+		
+		self.delete_files()
